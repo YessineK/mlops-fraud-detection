@@ -1,0 +1,99 @@
+pipeline {
+    agent any
+
+    environment {
+        // Ces credentials doivent être configurés dans Jenkins
+        // Credentials ID: 'dagshub-token' (Secret Text)
+        DAGSHUB_TOKEN = credentials('dagshub-token')
+        
+        // Variables d'environnement pour MLflow
+        MLFLOW_TRACKING_USERNAME = 'bassem.benhamed'
+        MLFLOW_TRACKING_PASSWORD = '${DAGSHUB_TOKEN}'
+        MLFLOW_TRACKING_URI = 'https://dagshub.com/bassem.benhamed/mlops-sep-25.mlflow'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout automatique du repository
+                checkout scm
+            }
+        }
+
+        stage('Setup Environment') {
+            steps {
+                script {
+                    echo 'Creating Virtual Environment...'
+                    sh '''
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                        pip install dagshub
+                    '''
+                }
+            }
+        }
+
+        stage('Continuous Training') {
+            steps {
+                script {
+                    echo 'Starting Model Training...'
+                    // Utilisation de n_jobs=-1 dans le script python pour optimiser le CPU load
+                    sh '''
+                        . venv/bin/activate
+                        python3 Jenkins/train_model.py
+                    '''
+                }
+            }
+        }
+
+        stage('Register Best Model') {
+            steps {
+                script {
+                    echo 'Registering and Loading Best Model...'
+                    sh '''
+                        . venv/bin/activate
+                        python3 Jenkins/register_best_model.py
+                    '''
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    echo 'Running Fraud Scenario Test...'
+                    sh '''
+                        . venv/bin/activate
+                        python3 testing/test_fraud_scenario.py
+                    '''
+                }
+            }
+        }
+
+        stage('Build and Deploy') {
+            steps {
+                script {
+                    echo 'Building and Deploying with Docker Compose...'
+                    sh '''
+                        docker compose up -d --build
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Nettoyage éventuel
+            cleanWs()
+        }
+        success {
+            echo 'Training pipeline completed successfully!'
+        }
+        failure {
+            echo 'Training pipeline failed.'
+        }
+    }
+}

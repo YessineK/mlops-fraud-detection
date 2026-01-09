@@ -1,0 +1,14 @@
+{
+  "model_name": "Best_Fraud_LightGBM",
+  "version": "1.0.0",
+  "stage": "production",
+  "registered_at": "2025-11-18T11:10:45.362408",
+  "metrics": {
+    "accuracy": 0.99835,
+    "precision": 0.9018264840182648,
+    "recall": 0.8758314855875832,
+    "f1_score": 0.8886389201349831,
+    "roc_auc": 0.9987059418804295
+  },
+  "run_id": "77228da868a7451581de1b3b930c38e2"
+}

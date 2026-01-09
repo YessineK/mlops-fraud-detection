@@ -1,0 +1,14 @@
+{
+  "model_name": "Best_Fraud_RandomForest",
+  "version": "1.0.0",
+  "stage": "production",
+  "registered_at": "2026-01-02T06:26:22.922301",
+  "metrics": {
+    "accuracy": 0.9966666666666667,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1_score": 0.0,
+    "roc_auc": 0.986644407345576
+  },
+  "run_id": "84f415679c224ee9a58b2a5260098909"
+}
