@@ -22,9 +22,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
 # DagsHub & MLflow Config from .env or Environment Variables
-DAGSHUB_USERNAME = os.getenv('DAGSHUB_USER', 'karrayyessine1')
+import os
+
+# Configuration MLflow et DagsHub
+DAGSHUB_USER = os.getenv('DAGSHUB_USER', 'karrayyessine1')
 DAGSHUB_REPO = os.getenv('DAGSHUB_REPO', 'mlops-fraud-detection')
-MLFLOW_TRACKING_URI = os.getenv('MLFLOW_TRACKING_URI', f"https://dagshub.com/{DAGSHUB_USERNAME}/{DAGSHUB_REPO}.mlflow")
+DAGSHUB_TOKEN = os.getenv('DAGSHUB_TOKEN', os.getenv('MLFLOW_TRACKING_PASSWORD', ''))
+
+# Configurer les credentials
+os.environ['MLFLOW_TRACKING_USERNAME'] = DAGSHUB_USER
+os.environ['MLFLOW_TRACKING_PASSWORD'] = DAGSHUB_TOKEN
+
+mlflow.set_tracking_uri(f"https://dagshub.com/{DAGSHUB_USER}/{DAGSHUB_REPO}.mlflow")
 
 # Initialize DagsHub and MLflow
 try:
