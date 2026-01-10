@@ -17,6 +17,10 @@ from preprocessing_fraud_class import PreprocessingFraud
 DAGSHUB_USER = os.getenv('DAGSHUB_USER', 'karrayyessine1')
 DAGSHUB_REPO = os.getenv('DAGSHUB_REPO', 'mlops-fraud-detection')
 DAGSHUB_TOKEN = os.getenv('MLFLOW_TRACKING_PASSWORD', os.getenv('DAGSHUB_TOKEN', 'f460bc1b164b8e147ccb2a8fc4208ae6075c0514'))
+# Debug - voir si le token est bien passé
+print(f"🔍 DEBUG - Token length: {len(DAGSHUB_TOKEN)}")
+print(f"🔍 DEBUG - Token first 10 chars: {DAGSHUB_TOKEN[:10] if DAGSHUB_TOKEN else 'EMPTY'}")
+print(f"🔍 DEBUG - MLFLOW_TRACKING_PASSWORD env: {os.getenv('MLFLOW_TRACKING_PASSWORD', 'NOT SET')[:10] if os.getenv('MLFLOW_TRACKING_PASSWORD') else 'NOT SET'}")
 # Configurer les credentials
 os.environ['MLFLOW_TRACKING_USERNAME'] = DAGSHUB_USER
 os.environ['MLFLOW_TRACKING_PASSWORD'] = DAGSHUB_TOKEN
