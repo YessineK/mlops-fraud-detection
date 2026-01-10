@@ -16,8 +16,7 @@ from preprocessing_fraud_class import PreprocessingFraud
 # Configuration MLflow et DagsHub
 DAGSHUB_USER = os.getenv('DAGSHUB_USER', 'karrayyessine1')
 DAGSHUB_REPO = os.getenv('DAGSHUB_REPO', 'mlops-fraud-detection')
-DAGSHUB_TOKEN = os.getenv('DAGSHUB_TOKEN', os.getenv('MLFLOW_TRACKING_PASSWORD', ''))
-
+DAGSHUB_TOKEN = os.getenv('MLFLOW_TRACKING_PASSWORD', os.getenv('DAGSHUB_TOKEN', '5b49da638bddbf3dd76e76fb724c01601dfd497b'))
 # Configurer les credentials
 os.environ['MLFLOW_TRACKING_USERNAME'] = DAGSHUB_USER
 os.environ['MLFLOW_TRACKING_PASSWORD'] = DAGSHUB_TOKEN
