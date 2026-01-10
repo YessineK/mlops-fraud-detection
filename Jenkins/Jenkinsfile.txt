@@ -2,14 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Ces credentials doivent être configurés dans Jenkins
-        // Credentials ID: 'dagshub-token' (Secret Text)
-        DAGSHUB_TOKEN = credentials('dagshub-token')
-        
-        // Variables d'environnement pour MLflow
-        MLFLOW_TRACKING_USERNAME = 'bassem.benhamed'
-        MLFLOW_TRACKING_PASSWORD = '${DAGSHUB_TOKEN}'
-        MLFLOW_TRACKING_URI = 'https://dagshub.com/bassem.benhamed/mlops-sep-25.mlflow'
+        DAGSHUB_USER = "karrayyessine1"
+        MLFLOW_TRACKING_URI = "https://dagshub.com/karrayyessine1/mlops-fraud-detection.mlflow"
     }
 
     stages {
