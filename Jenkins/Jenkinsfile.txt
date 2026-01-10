@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DAGSHUB_USER = "karrayyessine1"
+        DAGSHUB_REPO = "mlops-fraud-detection"
         MLFLOW_TRACKING_URI = "https://dagshub.com/karrayyessine1/mlops-fraud-detection.mlflow"
     }
 
