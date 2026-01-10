@@ -34,38 +34,40 @@ pipeline {
         }
 
         stage('Continuous Training') {
+            when { expression { false } }  // ✅ DÉSACTIVÉ
             steps {
                 script {
-                    echo 'Starting Model Training...'
-                    // Utilisation de n_jobs=-1 dans le script python pour optimiser le CPU load
-                    sh '''
-                        . venv/bin/activate
+                    echo "Starting Model Training..."
+                    sh """
+                        source venv/bin/activate
                         python3 Jenkins/train_model.py
-                    '''
+                    """
                 }
             }
         }
-
+        
         stage('Register Best Model') {
+            when { expression { false } }  // ✅ DÉSACTIVÉ
             steps {
                 script {
-                    echo 'Registering and Loading Best Model...'
-                    sh '''
-                        . venv/bin/activate
+                    echo "Registering and Loading Best Model..."
+                    sh """
+                        source venv/bin/activate
                         python3 Jenkins/register_best_model.py
-                    '''
+                    """
                 }
             }
         }
-
+        
         stage('Run Tests') {
+            when { expression { false } }  // ✅ DÉSACTIVÉ
             steps {
                 script {
-                    echo 'Running Fraud Scenario Test...'
-                    sh '''
-                        . venv/bin/activate
+                    echo "Running Fraud Scenario Test..."
+                    sh """
+                        source venv/bin/activate
                         python3 testing/test_fraud_scenario.py
-                    '''
+                    """
                 }
             }
         }
