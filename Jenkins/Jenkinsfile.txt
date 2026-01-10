@@ -76,9 +76,10 @@ pipeline {
             steps {
                 script {
                     echo 'Building and Deploying with Docker Compose...'
-                    sh '''
-                        docker compose up -d --build
-                    '''
+                sh '''
+                    docker compose down || true
+                    docker compose up -d --build
+                '''
                 }
             }
         }
