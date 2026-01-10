@@ -2,9 +2,12 @@ pipeline {
     agent any
 
     environment {
-        DAGSHUB_USER = "karrayyessine1"
-        DAGSHUB_REPO = "mlops-fraud-detection"
-        MLFLOW_TRACKING_URI = "https://dagshub.com/karrayyessine1/mlops-fraud-detection.mlflow"
+        MLFLOW_TRACKING_USERNAME = 'karrayyessine1'
+        MLFLOW_TRACKING_PASSWORD = credentials('dagshub-token')
+        MLFLOW_TRACKING_URI = 'https://dagshub.com/karrayyessine1/mlops-fraud-detection.mlflow'
+        DAGSHUB_TOKEN = credentials('dagshub-token')
+        DAGSHUB_USER = 'karrayyessine1'
+        DAGSHUB_REPO = 'mlops-fraud-detection'
     }
 
     stages {
