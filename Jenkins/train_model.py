@@ -80,8 +80,8 @@ def train_and_track():
     baseline_models = {
         'RandomForest': RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1),
         'XGBoost': XGBClassifier(n_estimators=100, random_state=42, n_jobs=-1, eval_metric='logloss'),
-        'LightGBM': LGBMClassifier(n_estimators=100, random_state=42, n_jobs=-1, verbose=-1),
-        'CatBoost': CatBoostClassifier(iterations=100, random_state=42, verbose=0)
+   #     'LightGBM': LGBMClassifier(n_estimators=100, random_state=42, n_jobs=-1, verbose=-1),
+    #    'CatBoost': CatBoostClassifier(iterations=100, random_state=42, verbose=0)
     }
 
     # 3. Entraînement et Tracking
