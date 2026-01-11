@@ -70,20 +70,44 @@ pipeline {
                 }
             }
         }
-
+        // ============ AJOUTEZ CETTE ÉTAPE ICI ============
+        stage('Debug - Check Files') {
+            steps {
+                script {
+                    sh '''
+                        echo "=== Current directory ==="
+                        pwd
+                        echo ""
+                        echo "=== Files in root ==="
+                        ls -la
+                        echo ""
+                        echo "=== Check if backend exists ==="
+                        ls -la backend/ || echo "❌ backend directory not found"
+                        echo ""
+                        echo "=== Check if frontend exists ==="
+                        ls -la frontend/ || echo "❌ frontend directory not found"
+                        echo ""
+                        echo "=== Check docker-compose.yml ==="
+                        cat docker-compose.yml || echo "❌ docker-compose.yml not found"
+                    '''
+                }
+            }
+        }
+        // ================================================
+        
         stage('Build and Deploy') {
             steps {
                 script {
-                    echo 'Building and Deploying with Docker Compose...'
+                    echo "Building and Deploying with Docker Compose..."
                     sh '''
-                        docker compose down || true
+                        docker compose down
                         docker compose up -d --build
                     '''
                 }
             }
         }
     }
-
+    
     post {
         always {
             cleanWs()
