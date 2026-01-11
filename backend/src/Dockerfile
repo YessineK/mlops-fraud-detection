@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --default-timeout=1000 --no-cache-dir -r requirements.txt
 
-# Copy ALL backend content (src folder included)
+# Copy all backend files
 COPY . .
 
 # Expose port
