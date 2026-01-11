@@ -4,7 +4,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: src/Dockerfile  # ← Changez cette ligne
     container_name: fraud-detection-backend
     ports:
       - "8000:8000"
