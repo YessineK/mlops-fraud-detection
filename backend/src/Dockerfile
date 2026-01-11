@@ -10,14 +10,11 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --default-timeout=1000 --no-cache-dir -r requirements.txt
 
-# Copy source code
-COPY src ./src
-
-# ✅ IMPORTANT - Copier le modèle au bon endroit
-COPY src/processors /app/processors
+# Copy everything
+COPY . .
 
 # Expose port
 EXPOSE 8000
 
-# Run from src folder
+# Run the application
 CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]
