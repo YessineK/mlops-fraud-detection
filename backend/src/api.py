@@ -4,9 +4,9 @@ import pandas as pd
 import numpy as np
 import mlflow.pyfunc
 from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from dotenv import load_dotenv
 import io
 from datetime import datetime
@@ -24,7 +24,7 @@ MLFLOW_TRACKING_URI = os.getenv('MLFLOW_TRACKING_URI')
 MLFLOW_TRACKING_USERNAME = os.getenv('MLFLOW_TRACKING_USERNAME')
 MLFLOW_TRACKING_PASSWORD = os.getenv('MLFLOW_TRACKING_PASSWORD')
 MODEL_REGISTRY_NAME = os.getenv('MODEL_REGISTRY_NAME', 'fraud_detection_best_model')
-MODEL_STAGE = 'Production'  # Or 'Staging', or None for latest version
+MODEL_STAGE = 'Production'
 
 # Set MLflow tracking URI
 if MLFLOW_TRACKING_URI:
@@ -67,9 +67,6 @@ class InferencePreprocessor(PreprocessingFraud):
             self.df_clean['dob'] = pd.to_datetime(self.df_clean['dob'])
             
         # 3. Feature Engineering
-        # We need to handle cases where some columns might be missing if the input is minimal
-        # But assuming the input follows the training schema or at least contains necessary raw features
-        
         # Temporal features
         if 'trans_date_trans_time' in self.df_clean.columns:
             self.df_clean['trans_hour'] = self.df_clean['trans_date_trans_time'].dt.hour
@@ -106,30 +103,17 @@ class InferencePreprocessor(PreprocessingFraud):
             if col in self.df_clean.columns:
                 if col in self.label_encoders:
                     le = self.label_encoders[col]
-                    # Handle unseen labels safely
-                    self.df_clean[col] = self.df_clean[col].astype(str).map(lambda s: s if s in le.classes_ else 'unknown')
-                    # If 'unknown' is not in classes, we might have an issue. 
-                    # For simplicity, we'll try to transform and catch errors or use a fallback.
-                    # A robust way is to use the closest known class or a default.
-                    # Here we assume the input is valid or we accept errors for now.
-                    
-                    # Better approach for inference:
-                    # If value not in encoder, assign to most frequent or specific 'unknown' value if encoder supports it.
-                    # Standard LabelEncoder doesn't support handle_unknown.
-                    # We will force conversion to known classes or 0.
-                    
                     known_classes = set(le.classes_)
                     self.df_clean[col] = self.df_clean[col].astype(str).apply(lambda x: x if x in known_classes else le.classes_[0])
                     self.df_clean[col] = le.transform(self.df_clean[col])
         
         # 5. Selection and Scaling
-        # Get numerical features expected by the model
         numeric_cols = self.feature_names.get('numerical_features', [])
         
         # Ensure all expected columns exist
         for col in numeric_cols:
             if col not in self.df_clean.columns:
-                self.df_clean[col] = 0 # Default value for missing numeric features
+                self.df_clean[col] = 0
                 
         # Scale
         if self.scaler:
@@ -138,7 +122,6 @@ class InferencePreprocessor(PreprocessingFraud):
         # Return only the features expected by the model
         all_features = self.feature_names.get('all_features', [])
 
-        # If all_features is empty, use numeric + encoded categorical
         if not all_features:
             available_cols = [c for c in self.df_clean.columns if c not in ['trans_date_trans_time', 'dob']]
             return self.df_clean[available_cols]
@@ -172,74 +155,28 @@ async def startup_event():
         import json
         import pickle
         
-        # Define paths
-        # Check if running in Docker (model_registry is mounted at /app/model_registry)
-        if os.path.exists('/app/model_registry'):
-            MODEL_REGISTRY_DIR = Path('/app/model_registry')
-        else:
-            # Local development path
-            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            MODEL_REGISTRY_DIR = Path(base_dir) / 'notebooks' / 'model_registry'
+        # ✅ NOUVEAU PATH - Chercher dans processors/
+        model_path = Path(__file__).parent / "processors" / "Best_Fraud_RandomForest_model.pkl"
         
-        # Function to load from registry (as requested)
-        def load_from_registry(model_name, stage="production"):
-            """Charge un modèle depuis le registry local"""
-            # Handle spaces in model name if any, though directory seems to be Best_Fraud_LightGBM
-            # The user's code says: model_dir = MODEL_REGISTRY_DIR / model_name.replace(" ", "_")
-            # We need to ensure we pass the right name.
-            # Based on file listing: notebooks/model_registry/Best_Fraud_LightGBM
-            
-            model_dir = MODEL_REGISTRY_DIR / model_name.replace(" ", "_")
-            model_path = model_dir / f"{stage}.pkl"
-            
-            if not model_path.exists():
-                raise FileNotFoundError(f"Model not found at {model_path}")
-            
-            with open(model_path, 'rb') as f:
-                model = pickle.load(f)
-            
-            # Charger les métadonnées
-            versions = [d for d in model_dir.iterdir() if d.is_dir()]
-            if versions:
-                # Sort by version number assuming semantic versioning or simple string sort
-                latest_version = sorted(versions)[-1]
-                metadata_path = latest_version / "metadata.json"
-                if metadata_path.exists():
-                    with open(metadata_path, 'r') as f:
-                        metadata = json.load(f)
-                else:
-                    metadata = {}
-            else:
-                metadata = {}
-            
-            return model, metadata
-
-        print(f"🔄 Loading model from local registry...")
-        # We use 'Best Fraud LightGBM' or 'Best_Fraud_LightGBM' depending on how we want to call it.
-        # The directory is 'Best_Fraud_LightGBM'. 
-        # If we pass 'Best Fraud LightGBM', replace(" ", "_") makes it 'Best_Fraud_LightGBM'.
-        # Let's use the directory name directly or a name that maps to it.
-        # The .env says MODEL_REGISTRY_NAME=fraud_detection_best_model which might not match.
-        # We will hardcode 'Best Fraud LightGBM' or check if we should use the env var.
-        # Given the user's specific code, let's try to find the directory.
+        if not model_path.exists():
+            raise FileNotFoundError(f"Model not found at {model_path}")
         
-        target_model_name = "Best_Fraud_RandomForest" # Matches directory 
-        model, metadata = load_from_registry(target_model_name, stage="production")
+        print(f"🔄 Loading model from: {model_path}")
         
-        print(f"✅ Model loaded successfully from local registry")
-        print(f"   Name: {metadata.get('model_name', 'N/A')}")
-        print(f"   Version: {metadata.get('version', 'N/A')}")
+        with open(model_path, 'rb') as f:
+            model = pickle.load(f)
+        
+        print(f"✅ Model loaded successfully!")
         
         model_metadata = {
-            "name": metadata.get('model_name', target_model_name),
-            "uri": str(MODEL_REGISTRY_DIR / target_model_name.replace(" ", "_") / "production.pkl"),
+            "name": "Best_Fraud_RandomForest",
+            "uri": str(model_path),
             "loaded_at": datetime.now().isoformat(),
-            "source": "local_registry",
-            "metadata": metadata
+            "source": "local_processors",
         }
         
     except Exception as e:
-        print(f"❌ Error loading model from local registry: {e}")
+        print(f"❌ Error loading model: {e}")
         print("⚠️ Running without model (predictions will fail).")
 
 @app.get("/")
@@ -280,13 +217,11 @@ class TransactionInput(BaseModel):
     city_pop: int = 50000
     job: str = "Developer"
     dob: str = "1990-01-01"
-from typing import Union
 
 @app.post("/predict")
 async def predict(request: Union[TransactionInput, List[TransactionInput]]):
     """
     Predict fraud for a single transaction or a batch of transactions.
-    Accepts a single TransactionInput object or a list of them.
     """
     if not model or not preprocessor:
         raise HTTPException(status_code=503, detail="Model or preprocessor not available")
@@ -296,7 +231,6 @@ async def predict(request: Union[TransactionInput, List[TransactionInput]]):
         if isinstance(request, list):
             df_input = pd.DataFrame([item.dict() for item in request])
         else:
-            # Single record
             df_input = pd.DataFrame([request.dict()])
             
         # Preprocess
@@ -312,8 +246,6 @@ async def predict(request: Union[TransactionInput, List[TransactionInput]]):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
-
-from fastapi.responses import StreamingResponse
 
 @app.post("/predictCSV")
 async def predict_csv(file: UploadFile = File(...)):
@@ -331,16 +263,12 @@ async def predict_csv(file: UploadFile = File(...)):
         contents = await file.read()
         df_input = pd.read_csv(io.BytesIO(contents))
         
-# Preprocess
+        # Preprocess
         X = preprocessor.preprocess_inference(df_input)
-        
-        # DEBUG: Print columns
-        print(f"🔍 Colonnes après preprocessing: {X.columns.tolist()}")
-        print(f"🔍 Shape: {X.shape}")
-        print(f"🔍 Features attendues: {preprocessor.feature_names.get('all_features', [])}")
         
         # Predict
         predictions = model.predict(X)
+        
         # Add predictions to result
         df_result = df_input.copy()
         df_result['predict'] = predictions
@@ -350,7 +278,7 @@ async def predict_csv(file: UploadFile = File(...)):
         df_result.to_csv(output, index=False)
         output.seek(0)
         
-        # Return file directly
+        # Return file
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="text/csv",
@@ -359,5 +287,3 @@ async def predict_csv(file: UploadFile = File(...)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
-
-# To run: uvicorn backend.src.api:app --reload
