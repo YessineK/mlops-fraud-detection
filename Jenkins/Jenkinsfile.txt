@@ -84,14 +84,12 @@ pipeline {
             }
         }
     }
-
     post {
         always {
-            // Nettoyage éventuel
-            cleanWs()
+            // cleanWs()  // Désactivé temporairement
         }
         success {
-            echo 'Training pipeline completed successfully!'
+            echo 'Training pipeline completed successfully.'
         }
         failure {
             echo 'Training pipeline failed.'
