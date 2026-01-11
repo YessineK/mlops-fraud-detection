@@ -84,15 +84,15 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-            // cleanWs()  // Désactivé temporairement
+        post {
+            always {
+                cleanWs()
+            }
+            success {
+                echo 'Training pipeline completed successfully.'
+            }
+            failure {
+                echo 'Training pipeline failed.'
+            }
         }
-        success {
-            echo 'Training pipeline completed successfully.'
-        }
-        failure {
-            echo 'Training pipeline failed.'
-        }
-    }
 }
